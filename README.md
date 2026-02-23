@@ -1,269 +1,320 @@
-# DevOps BootCamp: Kubernetes Practical Task
+# Kubernetes 3-Tier Application Deployment
+## 📌 Project Overview
 
-We are glad to see you here!
+This project contains a complete **Kubernetes deployment of a 3-tier web application**:
 
-During this course you will become familiar with a lot of tools and technologies. We would like you to apply this knowledge in practice, otherwise it would be boring. There is a task for you, which you can do along with stydying materials from this course. So, without further adieu, let's begin this task!
+* Presentation Layer: NGINX Ingress for external access
+* Application Layer: Flask Python web application
+* Data Layer: MongoDB database with persistent storage
 
-**Be aware:**
-Don't make any changes in the **.py** files. It can break test logic.
+The application **allows users to view and interact with a web interface** that displays dynamic content, with the ability to change the background color via configuration.
 
-# Description
+This project is designed as a **portfolio‑grade DevOps project**, aligned with **real industry practices** and expectations for **DevOps Junior / Associate roles**.
 
-You need to build the app's container images and deploy them to Kubernetes.
+---
 
-## Requirements
+## 🧱 Architecture
 
-- Installed [jq utility](https://stedolan.github.io/jq/download/) 
-
-## Application Description
-
-The application will be deployed in 3-tier layers:
-
-- Presentation layer: Kubernetes NGINX Ingress;
-- Application layer: Flask application based on Docker image in Kubernetes pods;
-- Data layer: MongoDB based on Docker image in Kubernetes pods.
-
-The Flask application provides users with possibility to change colour of website background.
-
-## Step Description
-
-### Build application 
-
-The first step of deploying the application is building Docker images and publish it to Docker registry.
-
-Application source code is placed in **application** directory.
-
-You need to prepare *Dockerfile* so that Docker image complyes with the following requirements:
-
-- No Hashell Dockerfile linter errors and/or warnings 
-- Docker image name is `<nsurname>_application`
-- Docker image consists of the application and its requirements
-- Docker image might be placed in **private** DockerHub repository `<nsurname>_application`
-
-
-##### Haskell Dockerfile Linter
-
-Lint, or a linter, is a static code analysis tool used to flag programming errors, bugs, stylistic errors and suspicious constructs.
-
-How to install `hadolint`: [Haskell Dockerfile Linter](https://github.com/hadolint/hadolint#install)
-
-Check if `hadolint` is installed:
-
-```console
-$ hadolint --version
-Haskell Dockerfile Linter 2.7.0-no-git
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                      Kubernetes Cluster                      │
+│                                                              │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐   │
+│  │   Ingress   │────▶│    Flask    │────▶│   MongoDB   │   │
+│  │   (nginx)   │     │     App     │     │  StatefulSet│   │
+│  └─────────────┘     └─────────────┘     └─────────────┘   │
+│         │                   │                    │          │
+│         │                   │                    │          │
+│  ┌──────▼──────┐    ┌───────▼──────┐    ┌───────▼──────┐   │
+│  │ Application │    │   ConfigMap  │    │   Persistent │   │
+│  │   Service   │    │   & Secrets  │    │    Volume    │   │
+│  └─────────────┘    └──────────────┘    └──────────────┘   │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
 ```
-Run `hadolint` to lint your Dockerfiles and fix errors and warnings if they are.
+![Architecture UI](./Architecture1_python-katas.png)
 
-**Usage Example:**
+---
 
-```console
-$ cat Dockerfile 
-FROM nginx
-ADD info.conf /etc/nginx/conf.d/default.conf
+## 🧰 Tools & Technologies Used
 
-$ hadolint Dockerfile # 2 issues
-Dockerfile:1 DL3006 warning: Always tag the version of an image explicitly
-Dockerfile:2 DL3020 error: Use COPY instead of ADD for files and folders
+* **Docker** - For container building
+* **Minikube** - Local Kubernetes cluster
+* **kubectl** - Kubernetes CLI
+* **hadolint** - Dockerfile linter (optional)
+* **jq** - JSON processor (for tests)
 
-$ cat Dockerfile 
-FROM nginx:1.21.3
-COPY info.conf /etc/nginx/conf.d/default.conf
+---
 
-$ hadolint Dockerfile # no issues
+## 📂 Project Structure
+
+```bash
+.
+├── README.md                 # This documentation
+├── manifest.yml              # Complete Kubernetes manifest
+├── application/              # Flask application source
+├── requirments.txt           # Python dependencies
+│   ├── Dockerfile            # Docker image definition
+│   ├── app.py                # Main Flask application
+│   ├── requirements.txt      # Python dependencies
+│   ├── forms.py              # Form definitions
+│   └── templates/            # HTML templates
+│       ├── start.html        # Home page template
+│       └── form_test.html    # Test DB page template
+└── docker-compose.yaml       # Local development setup (optional)
 ```
 
-##### Private Docker repository
+---
 
-How to create a private repository: [Documentation](https://docs.docker.com/docker-hub/repos/#private-repositories)
+## 🚀 Deployment Steps
+### 1. Start Minikube and Enable Ingress
 
+```bash
+# Start Minikube
+minikube start --driver=docker
 
-### Test: Docker Compose Deployment (optional)
+# Enable NGINX Ingress
+minikube addons enable ingress
 
-The second step is that verify that your application can be deployed as Docker container.
-
-You need to prepare *docker-compose.yaml* that:
-
-- deploys *mongo* container:
-    - name: mongo
-    - port: 27017
-    - username: root
-    - password: example
-- deploys your application container:
-    - name: application
-    - port: 5000
-    - environment:
-        - MONGO_HOST: mongo
-        - MONGO_PORT: 27017
-        - BG_COLOR: teal
-
-
-Now you can deploy your application on the local PC and check how it works.
-
-**Step Result:**
-- the application is deployed (you can open it in browser)
-- issue is fixed on *Issue Page* page
-- data can be written to MongoDB on *Test DB Connectivity* page
-
-
-### Deployment Preparation (mandatory)
-
-The next step is preparing Kubernetes manifest **manifest.yml** and deploy it to *local* Kubernetes.
-
-Your Kubernetes manifest should meet the following requirements:
-
-- Deploy application layer (your custom Docker image) based on *Deployment* and *Service*:
-    - Docker credentials have been gotten from Kubernetes secret
-    - Deployment name is *application*
-    - Deployment label is *application*
-    - Container name is *application*
-    - Service name is *application*
-    - Service port is *80*
-    - Container port is *5000*
-    - The number of replicas is *1*
-    - Add liveness/readiness probe: liveness probe to path /healthz, readiness probe to path /healthx
-    - Deploy strategy "Recreate"
-    - Run application with next resources: CPU: limit-0.5 request-0.2, Memory: limit-128Mi request-64Mi
-    - The deployment variables were obtained from the Kubernetes configmap *application*
-    - Add init container to deployment of app: wait until the mongo is available and running
-- Deploy data layer:
-    - StatefullSet name is *mongo*
-    - StatefullSet label is *mongo*
-    - Container name is *mongo*
-    - The number of replicas is *1*
-    - Run StatefullSet with next resources:
-        - CPU: limit-0.5 request-0.2
-        - Memory: limit-256Mi request-128Mi
-    - Mongo credentials have been gotten from Kubernetes secret mongo
-    - Secret name is *mongo*
-- Deploy presentation layers based on NGINX Ingress:
-    - NGINX Ingress name is *nginx*
-    - Host is `<nsurname>.application.com`
-    - Port is *80*
-
-**Step Result:**
-- the application is deployed in your *local* Kubernetes;
-- the application is accessed through `<nsurname>.application.com` URL
-
-### Local Machine Preparation
-**Vagrant (optional)**
-Vagrantfile can be used for VM provisioning with required tools (Docker, Minikube, Hadolint, Kubectl, etc.).
-Otherwise required tools must be installed on your local machine.
-
-Futher elaboration of installing and checking tools can be found in the following sections.
-
-**Minikube (mandatory)**
-
-How to install and run minikube: [minikube start](https://minikube.sigs.k8s.io/docs/start/)
-
-Start Minikube and check if it is running:
-
-To start Minikube run `minikube start --vm-driver=$your_vm_provider` command, where *$your_vm_provider* is your [virtualization product](https://minikube.sigs.k8s.io/docs/drivers/). 
-For example:
-```console
-$ minikube start --vm-driver=hyperkit
-...
-
-$ minikube status
-minikube
-type: Control Plane
-host: Running
-kubelet: Running
-apiserver: Running
-kubeconfig: Configured
+# Verify Ingress controller is running
+kubectl get pods -n ingress-nginx
 ```
 
-Enable NGINX Ingress in MiniKube and check if it is running:
+### 2. Create Your Namespace and Context (Isolation)
 
-```console
-$ minikube addons enable ingress
-    ▪ Using image k8s.gcr.io/ingress-nginx/controller:v1.0.0-beta.3
-    ▪ Using image k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.0
-    ▪ Using image k8s.gcr.io/ingress-nginx/kube-webhook-certgen:v1.0
-🔎  Verifying ingress addon...
-🌟  The 'ingress' addon is enabled
+```bash
+# Run the preparation script with your full name
+./utils/local_minikube_preparation.sh "Diego Lopez"
 
-$ kubectl --context minikube --namespace ingress-nginx get pods
-NAME                                        READY   STATUS      RESTARTS   AGE
-ingress-nginx-admission-create--1-n9w2k     0/1     Completed   0          2m26s
-ingress-nginx-admission-patch--1-cnx7n      0/1     Completed   0          2m26s
-ingress-nginx-controller-69bdbc4d57-f7lfz   1/1     Running     0          2m26s
+# Switch to your context
+kubectl config use-context minikube-dlopez
 ```
 
-#### Local Kubernetes Environment Preparation (mandatory)
+### 3. Build and Load Docker Image
 
-To simulate **Production** environment, you need to create
-and configure your personal namespace in the local cluster.
+```bash 
+# Build the Flask application image
+cd application
+docker build -t dlopez_application:latest .
 
-It can get done using `utils/local_minikube_preparation.sh` script.
-The script creates cluster resources (namespace, role, config context) based on your full name (the first name charater and last name):
+# Load image into Minikube (for imagePullPolicy: IfNotPresent)
+minikube image load dlopez_application:latest
 
-```console
-$ utils/local_minikube_preparation.sh "Anton Butsko"
-Switched to context "minikube".
-namespace/abutsko created
-serviceaccount/abutsko created
-role.rbac.authorization.k8s.io/abutsko created
-rolebinding.rbac.authorization.k8s.io/abutsko created
-User "minikube-abutsko" set.
-Context "minikube-abutsko" created.
-Switched to context "abutsko".
+# Return to main directory
+cd ..
 ```
 
-To interact with your cluster using created credentials, you need to switch to created context.
+### 4. Deploy the Application 
 
-Use `kubectl config get-contexts` command to see existed contexts:
+```bash
+# Apply the Kubernetes manifest
+kubectl apply -f manifest.yml
 
-```console
-$ kubectl config get-contexts 
-CURRENT   NAME               CLUSTER         AUTHINFO           NAMESPACE
-*         abutsko            cluster.local   abutsko            abutsko
-          minikube           minikube        minikube           default
-          minikube-abutsko   minikube        minikube-abutsko   abutsko
+# Watch pods come up
+kubectl get pods -n dlopez -w
 ```
 
-Use `kubectl config use-context <name>` command to change current context:
+### 5. Access the Application 
 
-```console
-$ kubectl config use-context minikube-abutsko
-Switched to context "minikube-abutsko".
+```bash
+# Get Minikube IP
+minikube ip
+
+# Add to /etc/hosts (Linux/Mac)
+echo "$(minikube ip) dlopez.application.com" | sudo tee -a /etc/hosts
+
+# Open in browser
+open http://dlopez.application.com
 ```
 
-Check if your config context is set correctly so that you can interact with your cluster within only your namespace:
+---
 
-```console
-$ kubectl config current-context
-minikube-abutsko
-$ kubectl get pods
-No resources found in abutsko namespace.
-$ kubectl --namespace default get pods
-Error from server (Forbidden): pods is forbidden: User "system:serviceaccount:abutsko:abutsko" cannot list resource "pods" in API group "" in the namespace "default"
+## 📊 Application Endpoints
+
+|   Endpoint    |    Description         |        Expected Output          |
+| ------------- |:----------------------:|:-------------------------------:|    
+| /             | Home page              | Main page with teal background  |
+| /color        | Color API              | JSON with current color setting |    
+| /test_db      | Database test form     | Form to write data to MongoDB   | 
+| /db_message   | Home page              | JSON of all stored messages     |
+| /issue        | Color API              | JSON showing issue fix status   |    
+| /healthz      | Database test form     | "OK" (for kubernetes)           | 
+| /healthx      | Readiness probe        | "OK" (for kubernetes)           |
+
+---
+
+## 🔧 Configuration
+### ConfigMap (Non-sensitive Configuration)
+
+```yaml
+data:
+  MONGO_HOST: "mongo"        # MongoDB service name
+  MONGO_PORT: "27017"        # MongoDB port
+  BG_COLOR: "teal"            # Default background color
+  FAIL_FLAG: "false"          # Issue page status
 ```
 
-#### Kubernetes Secret Creation
+### Secret (Sensitive Data)
 
-**Usage Example:**
-```console
-$ kubectl create secret generic docker-secret \
-    --from-file=.dockerconfigjson=$HOME/.docker/config.json \
-    --type=kubernetes.io/dockerconfigjson
-secret/docker-secret created
+```yaml
+data:
+  MONGO_INITDB_ROOT_USERNAME: cm9vdA==  # "root" (base64 encoded)
+  MONGO_INITDB_ROOT_PASSWORD: ZXhhbXBsZQ==  # "example" (base64 encoded)
 ```
 
-**Tips:**
-- open your deployed application (`/test_db` page) in a browser. To do that you need to think about:
-    - how to get cluster/node IP address where NGINX ingress listen to;
-    - how to resolve your application DNS name (e.g., abutsko.application.com) to IP from the previous step
-- do some request from the form on the page
-- if some readiness or liveness checks fail, think about some Probes settings in seconds
-- if you have troubles with docker secret investigate [Kubernetes secret documentation](https://kubernetes.io/docs/concepts/configuration/secret/#docker-config-secrets)
+---
 
-**Be aware:**
-Possible, you will need to rerun the step of this test since you can reach your application and do some request only when it will be deployed.
-So that don't panic if this step failed on the first run.
+## 🔍 Key Features Explained
+### Init Container
+The application pod includes an init container that waits for MongoDB to be available:
 
-### Last Step
+```yaml
+initContainers:
+- name: wait-for-mongo
+  command: ['sh', '-c', "until nslookup mongo; do echo waiting for mongo; sleep 2; done"]
+```
 
-**Pay attention:**
-Automatically test will check only **manifest.yml** correctness. 
-Finally task will be checked in the life session with your mentor on your local minikube cluster.
+### Health probes
+* Liveness probe (/healthz): Restarts container if application hangs
+* Readiness probe (/healthx): Stops sending traffic if application isn't ready
+
+### Persistent Storage
+MongoDB uses persistent storage to survive pod restarts:
+
+```yaml
+volumeClaimTemplates:
+- metadata:
+    name: mongo-data
+  spec:
+    accessModes: ["ReadWriteOnce"]
+    resources:
+      requests:
+        storage: 1Gi
+```
+
+---
+
+## 🧪 Testing
+### Local Testing with Docker Compose
+
+```bash
+# Start both services
+docker-compose up -d
+
+# Test the application
+curl http://localhost:5000
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Kubernetes Testing
+ 
+ ```bash
+# Check all resources
+kubectl get all,configmap,secret,ingress,pvc -n dlopez
+
+# Check application logs
+kubectl logs -n dlopez -l app=application
+
+# Test database connectivity
+curl http://dlopez.application.com/db_message
+
+# Test issue page
+curl http://dlopez.application.com/issue
+
+# Change background color (via ConfigMap)
+kubectl patch configmap application -n dlopez -p '{"data":{"BG_COLOR":"blue"}}'
+kubectl rollout restart deployment application -n dlopez
+ ```
+
+---
+
+## 📈 Resource Allocation
+### Application Pod
+
+|   Resource    |      Request    |   Limit    |
+| ------------- |:---------------:|:----------:|   
+|    CPU        |   0.2 cores     | 0.5 cores  |
+|    Memory     |   64Mi          |   128Mi    |    
+
+### MongoDB Pod
+
+|   Resource    |      Request    |   Limit    |
+| ------------- |:---------------:|:----------:|   
+|    CPU        |   0.2 cores     | 0.5 cores  |
+|    Memory     |     128Mi       |   256Mi    |  
+|    Storage    |      1Gi        |     -      |
+
+---
+
+## 🐛 Troubleshooting
+### Common Issues and Solutions
+
+|        Issue          |                                Solution                                     |
+| --------------------- |:---------------------------------------------------------------------------:|
+|  ErrImageNeverPull	   |  Load image into Minikube: minikube image load dlopez_application:latest    |
+|  MongoDB OOMKilled	   |                 Increase memory limits in StatefulSet                       |
+|  Pod not ready	      |              Check logs: kubectl logs -n dlopez <pod-name>                  |
+| Authentication failed |	                  Verify secret values are correct                         |                
+|  Ingress not working	|        Ensure ingress addon is enabled: minikube addons enable ingress      |
+
+### Useful Debugging Commands
+
+```bash
+# Check pod status
+kubectl get pods -n dlopez
+
+# View detailed pod info
+kubectl describe pod -n dlopez -l app=application
+
+# Follow logs
+kubectl logs -n dlopez -l app=application -f
+
+# Execute commands in pod
+kubectl exec -n dlopez -it deployment/application -- /bin/sh
+
+# Check events
+kubectl get events -n dlopez --sort-by='.lastTimestamp'
+```
+
+---
+
+## 🔐 Security Considerations
+
+* Secrets are base64 encoded (not encrypted - for production, use external secrets manager)
+* RBAC limits access to namespace-scoped resources
+* Resource limits prevent DoS attacks
+* Network policies (can be added) restrict pod-to-pod communication
+
+---
+
+## 📝 Notes for Production
+For production deployment, consider:
+1. Use external secrets manager (HashiCorp Vault, AWS Secrets Manager)
+2. Enable encryption at rest for etcd
+3. Implement network policies for pod isolation
+4. Add horizontal pod autoscaling based on load
+5. Use CI/CD pipeline for automated deployments
+6. Implement monitoring (Prometheus + Grafana)
+7. Add logging aggregation (ELK stack or Loki)
+
+---
+
+## 📚 Additional Resources
+
+* [Kubernetes Documentation](https://kubernetes.io/docs/) 
+* [Flask Documentation](https://flask.palletsprojects.com/)
+* [MongoDB Kubernetes Operator](https://www.mongodb.com/kubernetes)
+* [Minikube Documentation](https://minikube.sigs.k8s.io/docs/)
+
+---
+
+## 👨‍💻 Author
+
+**Diego López Arango** - DevOps Engineer 
+
+⭐ Don't forget to star this repo if you found it helpful!
