@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<title>W3.CSS Template</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Lato">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Montserrat">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<script
+  src="https://code.jquery.com/jquery-3.6.0.min.js"
+  integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+  crossorigin="anonymous"></script>
+<style>
+body,h1,h2,h3,h4,h5,h6 {font-family: "Lato", sans-serif}
+.w3-bar,h1,button {font-family: "Montserrat", sans-serif}
+.fa-anchor,.fa-coffee {font-size:200px}
+</style>
+<body class="w3-{{ color }}">
+<!-- Navbar -->
+<div class="w3-top">
+  <div class="w3-bar w3-{{ color }} w3-card w3-left-align w3-large">
+    <a class="w3-bar-item w3-button w3-hide-medium w3-hide-large w3-right w3-padding-large w3-hover-white w3-large w3-red" href="javascript:void(0);" onclick="myFunction()" title="Toggle Navigation Menu"><i class="fa fa-bars"></i></a>
+    <a href="/" class="w3-bar-item w3-button w3-padding-large w3-white">Home</a>
+    <a href="/color" class="w3-bar-item w3-button w3-hide-small w3-padding-large w3-hover-white">Color API</a>
+    <a href="/test_db" class="w3-bar-item w3-button w3-hide-small w3-padding-large w3-hover-white">Test DB</a>
+    <a href="/issue" class="w3-bar-item w3-button w3-hide-small w3-padding-large w3-hover-white">Issue Page</a>
+    <a href="/db_message" class="w3-bar-item w3-button w3-hide-small w3-padding-large w3-hover-white">DB Messages</a>
+  </div>
+</div>
+<!-- Header -->
+<header class="w3-container w3-{{ color }} w3-center" style="padding:50px 16px">
+  {% block content %}
+    <div class="contact">
+        <h1 class="w3-margin w3-xxxlarge">Test DB Connectivity</h1>
+        <form action="{{ url_for('test_db_form') }}" method=post>
+            <div>
+                <p class="formelement">
+                    {{ form.name.label }} <br>
+                    {{ form.name(placeholder='Your name') }}
+                </p>
+                <p class="formelement">
+                    {{ form.message.label }}<br>
+                    {{ form.message(placeholder='Write your request ...') }}
+                </p>
+                <p class="formelement">
+                    {{ form.submit(class_="w3-button w3-black w3-padding-large w3-large w3-margin-top") }}
+                </p>
+            </div>
+        </form>
+    </div>
+    <p>
+      <button id="data" class="formelement w3-button w3-black w3-padding-large w3-large w3-margin-top">View Data</button>
+    </p>
+    {% endblock %}
+    {% block styles %}
+    <link rel="stylesheet" href="{{url_for('.static', filename='styles.css')}}">
+    {% endblock %}
+</header>
+<div id="result" class="w3-white w3-container w3-center">
+  <table id="result_table" class="w3-table w3-center w3-striped w3-bordered">
+    <tr>
+      <th><h3>Name</h3></th>
+      <th><h3>Message</h3></th>
+      <th><h3>Timestamp</h3></th>
+    </tr>
+  </table>
+</div>
+<script>
+$SCRIPT_ROOT = {{ request.script_root|tojson }};
+// Used to toggle the menu on small screens when clicking on the menu button
+function myFunction() {
+  var x = document.getElementById("navDemo");
+  if (x.className.indexOf("w3-show") == -1) {
+    x.className += " w3-show";
+  } else { 
+    x.className = x.className.replace(" w3-show", "");
+  }
+
+  var x = document.getElementById("result");
+  if (x.className.indexOf("w3-show") == -1) {
+    x.className += " w3-show";
+  } else { 
+    x.className = x.className.replace(" w3-show", "");
+  }
+}
+$(function() {
+    $('#data').bind('click', function() {
+      $('.values').empty();
+      $.getJSON($SCRIPT_ROOT + '/db_message', function(data) {
+        var items = [];
+        if (data.succeed) {
+          $.each( data, function( key, val ) {
+            $.each(val, function( form, value ) {
+              $('#result_table').append(
+                '<tr class="values w3-hover-teal" ><td>' + value.name + '</td>' +
+                '<td>' +  value.message + '</td>' +
+                '<td>' +  value.timestamp + '</td></tr>'
+                );
+            });
+          });
+        } else {
+          $('#result').append(
+            '<div class="w3-panel w3-center w3-red w3-display-container values">' + 
+              '<span onclick="this.parentElement.style.display=\'none\'"' +
+              'class="w3-button w3-large w3-display-topright">&times;</span>' +
+              '<h3>Error!</h3>' +
+              '<p>Failed to connect to MongoDB</p>' +
+            '</div>'
+          )
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>

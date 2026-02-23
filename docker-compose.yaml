@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+    command: mongod --bind_ip_all --port 27017
+
+  application:
+    image: dlopez_application
+    container_name: application
+    ports:
+      - "5000:5000"
+    environment:
+      MONGO_HOST: 172.17.0.1
+      MONGO_PORT: 27017
+      BG_COLOR: teal
+      MONGO_USERNAME: root
+      MONGO_PASSWORD: example
+      FAIL_FLAG: "false"
+    depends_on:
+      - mongo
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
