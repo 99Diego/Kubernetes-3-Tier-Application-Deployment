@@ -304,6 +304,7 @@ echo "$(minikube ip) dlopez.application.com" | sudo tee -a /etc/hosts
 ```
 
 You should see something like this: 
+
 ![Evidence](./Evidence.png)
 
 ---
