@@ -303,6 +303,9 @@ echo "$(minikube ip) dlopez.application.com" | sudo tee -a /etc/hosts
 # http://dlopez.application.com/issue
 ```
 
+You should see something like this: 
+![Evidence](./Evidence.png)
+
 ---
 
 ## 📊 Application Endpoints
