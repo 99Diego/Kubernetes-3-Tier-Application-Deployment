@@ -461,13 +461,6 @@ kubectl patch configmap application -n dlopez -p '{"data":{"BG_COLOR":"blue"}}'
 kubectl rollout restart deployment application -n dlopez
  ```
 
-### Run the Local Test Suite
-
-```bash
-# The final-check utility validates your deployment
-./final-check -test-suite 'final_task' -student "Diego Lopez"
-```
-
 ---
 
 ## 🐛 Troubleshooting Guide
