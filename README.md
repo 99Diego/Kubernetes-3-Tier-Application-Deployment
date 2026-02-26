@@ -334,12 +334,19 @@ data:
   FAIL_FLAG: "false"          # Issue page status
 ```
 
-### Secret (Sensitive Data)
+### Secret (Sensitive Data) - Encrypted with Sealed Secrets
 
 ```yaml
-data:
-  MONGO_INITDB_ROOT_USERNAME: cm9vdA==  # "root" (base64 encoded)
-  MONGO_INITDB_ROOT_PASSWORD: ZXhhbXBsZQ==  # "example" (base64 encoded)
+# This is what you see in Git (ENCRYPTED - SAFE!)
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: mongo
+  namespace: dlopez
+spec:
+  encryptedData:
+    MONGO_INITDB_ROOT_USERNAME: AgBy3i4OJq...  # Encrypted "root"
+    MONGO_INITDB_ROOT_PASSWORD: AgB5n8pLmR...  # Encrypted "example"
 ```
 
 ---
@@ -351,7 +358,9 @@ The application pod includes an init container that waits for MongoDB to be avai
 ```yaml
 initContainers:
 - name: wait-for-mongo
-  command: ['sh', '-c', "until nslookup mongo; do echo waiting for mongo; sleep 2; done"]
+  image: busybox:1.28
+  command: ['sh', '-c', "until nslookup mongo; do 
+            echo waiting for mongo; sleep 2; done"]
 ```
 
 What it does: Prevents the Flask app from starting until MongoDB is resolvable via DNS.
